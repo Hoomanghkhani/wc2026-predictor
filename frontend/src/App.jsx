@@ -88,12 +88,12 @@ function App() {
   const [authPassword, setAuthPassword] = useState('');
 
   useEffect(() => {
-    // Clear old predictions and reset to V2 mapping
-    if (localStorage.getItem('wc2026_version') !== 'v2') {
+    // Clear old predictions and reset to V3 mapping
+    if (localStorage.getItem('wc2026_version') !== 'v3') {
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('wc2026_')) localStorage.removeItem(key);
       });
-      localStorage.setItem('wc2026_version', 'v2');
+      localStorage.setItem('wc2026_version', 'v3');
       window.location.reload();
     }
 
