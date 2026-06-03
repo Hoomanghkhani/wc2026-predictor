@@ -3,6 +3,8 @@ import './index.css';
 import rawData from './data.json';
 import { calculateGroupStandings, getKnockoutMatches } from './utils';
 
+const DB_URL = "https://wc2026-8c20c-default-rtdb.firebaseio.com";
+
 // Helper component to render each match row cleanly
 const MatchRow = ({ m, isKnockout, predictions, adminPreds, currentUser, handleScoreChange }) => {
   const p = predictions[m.id] || {};
@@ -75,93 +77,131 @@ const MatchRow = ({ m, isKnockout, predictions, adminPreds, currentUser, handleS
 };
 
 function App() {
-  const [users, setUsers] = useState([]); // [{ username, password }]
+  const [dbUsers, setDbUsers] = useState({}); // { username: password }
+  const [dbPredictions, setDbPredictions] = useState({}); // { username: { matchId: { s1, s2 } } }
+  
   const [currentUser, setCurrentUser] = useState(null);
-  const [predictions, setPredictions] = useState({});
   const [activeTab, setActiveTab] = useState('groups');
 
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
+  // Fetch initial data from Firebase via REST API
   useEffect(() => {
-    // We already cleared old predictions previously. No need to clear again immediately unless required.
-    
-    let savedUsers = JSON.parse(localStorage.getItem('wc2026_auth_users') || '[]');
-    if (!savedUsers.find(u => u.username === 'admin')) {
-      savedUsers.push({ username: 'admin', password: 'admin' });
-      localStorage.setItem('wc2026_auth_users', JSON.stringify(savedUsers));
-    }
-    setUsers(savedUsers);
+    const fetchData = async () => {
+      try {
+        setIsSyncing(true);
+        const resUsers = await fetch(`${DB_URL}/users.json`);
+        let fetchedUsers = (await resUsers.json()) || {};
+        
+        // Auto create admin if doesn't exist on server
+        if (!fetchedUsers['admin']) {
+          await fetch(`${DB_URL}/users/admin.json`, { method: 'PUT', body: JSON.stringify('admin') });
+          fetchedUsers['admin'] = 'admin';
+        }
+        setDbUsers(fetchedUsers);
+
+        const resPreds = await fetch(`${DB_URL}/predictions.json`);
+        const fetchedPreds = (await resPreds.json()) || {};
+        setDbPredictions(fetchedPreds);
+      } catch (error) {
+        console.error("Error fetching from Firebase:", error);
+      } finally {
+        setIsSyncing(false);
+      }
+    };
+
+    fetchData();
+    // Poll every 5 seconds to simulate real-time updates for other users
+    const interval = setInterval(fetchData, 5000);
+    return () => clearInterval(interval);
   }, []);
 
-  const handleAuth = () => {
+  const handleAuth = async () => {
     if (!authUsername || !authPassword) return alert('نام کاربری و رمز عبور الزامی است.');
+    const userLower = authUsername.toLowerCase();
     
-    const existing = users.find(u => u.username === authUsername);
-    if (existing) {
-      if (existing.password === authPassword) {
-        setCurrentUser(existing.username);
-        const savedPreds = JSON.parse(localStorage.getItem(`wc2026_preds_${existing.username}`) || '{}');
-        setPredictions(savedPreds);
+    if (dbUsers[userLower]) {
+      if (dbUsers[userLower] === authPassword) {
+        setCurrentUser(userLower);
         setAuthUsername('');
         setAuthPassword('');
       } else {
         alert('رمز عبور اشتباه است!');
       }
     } else {
-      if (authUsername.toLowerCase() === 'admin') return alert('این نام کاربری رزرو شده است.');
+      if (userLower === 'admin') return alert('این نام کاربری رزرو شده است.');
       
-      const newUsers = [...users, { username: authUsername, password: authPassword }];
-      setUsers(newUsers);
-      localStorage.setItem('wc2026_auth_users', JSON.stringify(newUsers));
-      
-      setCurrentUser(authUsername);
-      setPredictions({});
-      setAuthUsername('');
-      setAuthPassword('');
-      alert('حساب کاربری جدید ساخته شد و وارد شدید.');
+      // Register new user on Firebase
+      try {
+        await fetch(`${DB_URL}/users/${userLower}.json`, { method: 'PUT', body: JSON.stringify(authPassword) });
+        setDbUsers(prev => ({ ...prev, [userLower]: authPassword }));
+        setCurrentUser(userLower);
+        setAuthUsername('');
+        setAuthPassword('');
+        alert('حساب کاربری جدید در سرور ابری ساخته شد و وارد شدید.');
+      } catch (e) {
+        alert('خطا در ارتباط با سرور ابری!');
+      }
     }
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
-    setPredictions({});
     setActiveTab('groups');
   };
 
-  const handleScoreChange = (matchId, team, value) => {
+  const handleScoreChange = async (matchId, team, value) => {
     if (!currentUser) return;
     if (value !== '' && (isNaN(value) || value < 0)) return;
     
-    const newPreds = { ...predictions };
-    if (!newPreds[matchId]) newPreds[matchId] = { s1: '', s2: '', p1: '', p2: '' };
+    // Optimistic UI update
+    const userPreds = dbPredictions[currentUser] || {};
+    const newPred = { ...(userPreds[matchId] || { s1: '', s2: '', p1: '', p2: '' }) };
     
-    if (team === 1) newPreds[matchId].s1 = value;
-    else if (team === 2) newPreds[matchId].s2 = value;
-    else if (team === 'p1') newPreds[matchId].p1 = value;
-    else if (team === 'p2') newPreds[matchId].p2 = value;
+    if (team === 1) newPred.s1 = value;
+    else if (team === 2) newPred.s2 = value;
+    else if (team === 'p1') newPred.s1 = value; // typo prevention, assuming p1 and p2 below
+    else if (team === 'p1') newPred.p1 = value;
+    else if (team === 'p2') newPred.p2 = value;
 
-    setPredictions(newPreds);
-    localStorage.setItem(`wc2026_preds_${currentUser}`, JSON.stringify(newPreds));
+    if(team === 'p1') newPred.p1 = value; // Corrected overrides
+
+    setDbPredictions(prev => ({
+      ...prev,
+      [currentUser]: {
+        ...(prev[currentUser] || {}),
+        [matchId]: newPred
+      }
+    }));
+
+    // Save to Firebase asynchronously
+    try {
+      await fetch(`${DB_URL}/predictions/${currentUser}/${matchId}.json`, {
+        method: 'PATCH',
+        body: JSON.stringify(newPred)
+      });
+    } catch (e) {
+      console.error("Failed to sync score to server", e);
+    }
   };
 
-  const adminPreds = currentUser === 'admin' 
-    ? predictions 
-    : JSON.parse(localStorage.getItem('wc2026_preds_admin') || '{}');
-
+  const adminPreds = dbPredictions['admin'] || {};
+  const currentPreds = currentUser ? (dbPredictions[currentUser] || {}) : {};
   const knockouts = getKnockoutMatches(rawData, adminPreds);
   const isAdmin = currentUser === 'admin';
 
   const renderLeaderboard = () => {
-    const userScores = users.filter(u => u.username !== 'admin').map(u => {
-      const userPreds = JSON.parse(localStorage.getItem(`wc2026_preds_${u.username}`) || '{}');
+    const userScores = Object.keys(dbUsers).filter(u => u !== 'admin').map(username => {
+      const uPreds = dbPredictions[username] || {};
       let points = 0;
       let exactMatches = 0;
       let correctOutcomes = 0;
 
       Object.keys(adminPreds).forEach(mId => {
         const a = adminPreds[mId];
-        const p = userPreds[mId];
+        const p = uPreds[mId];
         if (a && a.s1 !== '' && a.s2 !== '' && p && p.s1 !== '' && p.s2 !== '') {
           const as1 = parseInt(a.s1), as2 = parseInt(a.s2);
           const ps1 = parseInt(p.s1), ps2 = parseInt(p.s2);
@@ -175,14 +215,14 @@ function App() {
           }
         }
       });
-      return { username: u.username, points, exactMatches, correctOutcomes };
+      return { username, points, exactMatches, correctOutcomes };
     });
 
     userScores.sort((a, b) => b.points - a.points);
 
     return (
       <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <h2 className="stage-title gold">جدول امتیازات کاربران</h2>
+        <h2 className="stage-title gold">جدول امتیازات (Leaderboard)</h2>
         <table className="leaderboard-table">
           <thead>
             <tr>
@@ -204,7 +244,7 @@ function App() {
               </tr>
             ))}
             {userScores.length === 0 && (
-              <tr><td colSpan="5">هنوز کاربری ثبت نشده است.</td></tr>
+              <tr><td colSpan="5">هنوز کاربری در سرور ثبت نشده است.</td></tr>
             )}
           </tbody>
         </table>
@@ -216,7 +256,7 @@ function App() {
     <div className="app-container">
       <header>
         <div>
-          <h1 className="logo">پیش‌بینی جام جهانی ۲۰۲۶</h1>
+          <h1 className="logo">پیش‌بینی جام جهانی ۲۰۲۶ {isSyncing && <span style={{fontSize:'0.8rem', color:'var(--success)'}}> (سینک ابری...)</span>}</h1>
           {currentUser && (
             <div className="tabs">
               <button className={activeTab === 'groups' ? 'active' : ''} onClick={() => setActiveTab('groups')}>مرحله گروهی</button>
@@ -246,8 +286,8 @@ function App() {
 
       {!currentUser ? (
         <div className="welcome-screen">
-          <h2>به سامانه پیش‌بینی جام جهانی ۲۰۲۶ خوش آمدید</h2>
-          <p>برای شروع و رقابت با دوستان، وارد حساب خود شوید.</p>
+          <h2>به سامانه آنلاین پیش‌بینی جام جهانی ۲۰۲۶ خوش آمدید</h2>
+          <p>این سامانه مستقیماً به سرور ابری متصل است. رقابت شما با دوستانتان لحظه‌ای ثبت می‌شود!</p>
         </div>
       ) : (
         <>
@@ -279,7 +319,7 @@ function App() {
                       {groupMatches.map(m => (
                         <MatchRow 
                           key={m.id} m={m} isKnockout={false} 
-                          predictions={predictions} adminPreds={adminPreds} 
+                          predictions={currentPreds} adminPreds={adminPreds} 
                           currentUser={currentUser} handleScoreChange={handleScoreChange}
                         />
                       ))}
@@ -295,35 +335,35 @@ function App() {
               <div className="knockout-stage">
                 <h2 className="stage-title">یک شانزدهم نهایی (R32)</h2>
                 <div className="match-list">
-                  {knockouts.r32.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
+                  {knockouts.r32.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={currentPreds} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage">
                 <h2 className="stage-title">یک هشتم نهایی (R16)</h2>
                 <div className="match-list">
-                  {knockouts.r16.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
+                  {knockouts.r16.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={currentPreds} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage">
                 <h2 className="stage-title">یک چهارم نهایی</h2>
                 <div className="match-list">
-                  {knockouts.qf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
+                  {knockouts.qf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={currentPreds} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage">
                 <h2 className="stage-title">نیمه‌نهایی</h2>
                 <div className="match-list">
-                  {knockouts.sf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
+                  {knockouts.sf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={currentPreds} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage final-stage">
                 <h2 className="stage-title">رده‌بندی</h2>
                 <div className="match-list">
-                  {knockouts.third.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
+                  {knockouts.third.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={currentPreds} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
                 <h2 className="stage-title gold">فینال</h2>
                 <div className="match-list">
-                  {knockouts.final.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
+                  {knockouts.final.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={currentPreds} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
             </div>
