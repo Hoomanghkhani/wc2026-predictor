@@ -2,18 +2,37 @@
 
 :root {
   /* FIFA Official Theme - Clean, Light, Professional */
-  --bg-main: #F4F7F9; /* Very light cool gray */
+  --bg-main: #F4F7F9;
   --bg-card: #FFFFFF;
-  --primary: #0253CC; /* Official FIFA/Sports Blue */
+  --primary: #0253CC;
   --primary-hover: #0241A3;
-  --secondary: #00E676; /* Pitch Green */
-  --text-main: #1A202C; /* Dark gray for readability */
+  --secondary: #00E676;
+  --text-main: #1A202C;
   --text-muted: #718096;
   --border: #E2E8F0;
   --success: #38A169;
   --gold: #D69E2E;
   --danger: #E53E3E;
   --header-bg: #FFFFFF;
+  --input-bg: #FFFFFF;
+  --input-disabled: #EDF2F7;
+  --match-row-bg: #F8FAFC;
+  --match-row-hover: #F1F5F9;
+}
+
+body.dark-mode {
+  --bg-main: #0F172A;
+  --bg-card: #1E293B;
+  --primary: #3B82F6;
+  --primary-hover: #60A5FA;
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --border: #334155;
+  --header-bg: #1E293B;
+  --input-bg: #0F172A;
+  --input-disabled: #334155;
+  --match-row-bg: #0F172A;
+  --match-row-hover: #1E293B;
 }
 
 * { box-sizing: border-box; }
@@ -25,6 +44,7 @@ body {
   color: var(--text-main);
   direction: rtl;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .app-container { max-width: 1500px; margin: 0 auto; padding: 2rem; }
@@ -36,18 +56,37 @@ header {
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.03);
   border: 1px solid var(--border);
+  transition: background-color 0.3s ease;
 }
+
+.header-left { display: flex; align-items: center; gap: 1rem; }
 
 .logo {
   font-size: 2rem; font-weight: 900;
   color: var(--primary);
-  margin: 0 0 1rem 0;
+  margin: 0;
   letter-spacing: -0.5px;
 }
 
-.tabs { display: flex; gap: 0.8rem; }
+.theme-toggle {
+  background: transparent;
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.theme-toggle:hover {
+  background: var(--match-row-bg);
+  transform: translateY(-2px);
+}
+
+.tabs { display: flex; gap: 0.8rem; margin-top: 1rem; }
 .tabs button {
-  background: #F8FAFC; color: var(--text-muted);
+  background: var(--match-row-bg); color: var(--text-muted);
   border: 1px solid var(--border); padding: 0.6rem 1.5rem; border-radius: 10px;
   font-weight: 700; transition: all 0.2s ease;
 }
@@ -56,20 +95,20 @@ header {
   box-shadow: 0 4px 12px rgba(2, 83, 204, 0.25);
 }
 .tabs button:hover:not(.active) {
-  background: #EDF2F7;
+  background: var(--border);
   color: var(--text-main);
 }
 
 .auth-container { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; }
 .auth-box { display: flex; gap: 0.5rem; align-items: center; }
 
-.user-profile { display: flex; align-items: center; gap: 1rem; background: #F8FAFC; padding: 0.6rem 1.2rem; border-radius: 10px; border: 1px solid var(--border); }
-.logout-btn { background: #FFF5F5; border: 1px solid #FEB2B2; color: var(--danger); padding: 0.4rem 1rem; }
+.user-profile { display: flex; align-items: center; gap: 1rem; background: var(--match-row-bg); padding: 0.6rem 1.2rem; border-radius: 10px; border: 1px solid var(--border); }
+.logout-btn { background: rgba(229, 62, 62, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 0.4rem 1rem; }
 .logout-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
 
 select, input, button {
   font-family: 'Vazirmatn', sans-serif; padding: 0.6rem 1rem; border-radius: 8px;
-  border: 1px solid var(--border); background: #FFFFFF; color: var(--text-main);
+  border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main);
   outline: none; transition: all 0.2s ease;
 }
 select:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 83, 204, 0.15); }
@@ -83,36 +122,36 @@ button:hover { background: var(--primary-hover); }
   border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
+.card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12); transform: translateY(-2px); }
 
-.welcome-screen { text-align: center; padding: 5rem 2rem; margin-top: 2rem; border: 2px dashed #CBD5E0; background: #F8FAFC; }
+.welcome-screen { text-align: center; padding: 5rem 2rem; margin-top: 2rem; border: 2px dashed var(--border); background: var(--match-row-bg); }
 
-.card h2, .stage-title { margin-top: 0; font-size: 1.3rem; color: #2D3748; border-bottom: 2px solid #EDF2F7; padding-bottom: 0.8rem; margin-bottom: 1.2rem; font-weight: 900; }
+.card h2, .stage-title { margin-top: 0; font-size: 1.3rem; color: var(--text-main); border-bottom: 2px solid var(--border); padding-bottom: 0.8rem; margin-bottom: 1.2rem; font-weight: 900; }
 .stage-title { text-align: center; }
 .stage-title.gold { color: var(--gold); border-color: #FEFCBF; }
 
 table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.95rem; margin-bottom: 1.5rem; }
-th, td { padding: 0.8rem 0.5rem; text-align: center; border-bottom: 1px solid #EDF2F7; }
+th, td { padding: 0.8rem 0.5rem; text-align: center; border-bottom: 1px solid var(--border); }
 th { color: var(--text-muted); font-weight: 700; font-size: 0.85rem; }
 td:first-child, th:first-child { text-align: right; font-weight: 700; color: var(--text-main); }
-tbody tr:hover { background: #F8FAFC; }
+tbody tr:hover { background: var(--match-row-bg); }
 
 .match-list { display: flex; flex-direction: column; gap: 0.6rem; }
 .match-row { 
-  display: flex; flex-direction: column; background: #F8FAFC; 
+  display: flex; flex-direction: column; background: var(--match-row-bg); 
   padding: 0.8rem; border-radius: 10px; font-size: 0.95rem; 
   transition: all 0.2s ease; border: 1px solid var(--border); 
 }
 .match-main { display: flex; align-items: center; justify-content: space-between; }
-.penalty-inputs { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed #E2E8F0; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
-.match-team { flex: 1; text-align: center; font-weight: 700; color: #2D3748; }
+.penalty-inputs { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed var(--border); color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
+.match-team { flex: 1; text-align: center; font-weight: 700; color: var(--text-main); }
 .match-team.right { text-align: left; }
 .match-team.left { text-align: right; }
 
 .match-inputs { display: flex; align-items: center; gap: 0.4rem; padding: 0 1rem; }
-.score-input { width: 44px; text-align: center; padding: 0.4rem; font-size: 1.1rem; font-weight: 800; background: #FFFFFF; border: 1px solid #CBD5E0; border-radius: 6px; color: var(--text-main); }
+.score-input { width: 44px; text-align: center; padding: 0.4rem; font-size: 1.1rem; font-weight: 800; background: var(--input-bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); }
 .score-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 83, 204, 0.15); }
-.score-input:disabled { opacity: 0.8; cursor: not-allowed; background: #EDF2F7; color: #A0AEC0; }
+.score-input:disabled { opacity: 0.8; cursor: not-allowed; background: var(--input-disabled); color: var(--text-muted); }
 .score-input.penalty { width: 36px; padding: 0.2rem; font-size: 0.95rem; border-color: var(--gold); }
 
 .qualifier { background: #F0FFF4; border-right: 3px solid var(--success); }
@@ -144,6 +183,6 @@ tbody tr:hover { background: #F8FAFC; }
 }
 
 /* Colors for Prediction Results */
-.exact-match { border-color: var(--success); background: #F0FFF4; box-shadow: 0 0 0 1px var(--success); }
-.correct-outcome { border-color: #84CC16; background: #F7FEE7; }
-.wrong-match { border-color: var(--danger); background: #FFF5F5; }
+.exact-match { border-color: var(--success); background: rgba(56, 161, 105, 0.1); box-shadow: 0 0 0 1px var(--success); }
+.correct-outcome { border-color: #84CC16; background: rgba(132, 204, 22, 0.1); }
+.wrong-match { border-color: var(--danger); background: rgba(229, 62, 62, 0.1); }

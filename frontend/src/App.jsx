@@ -86,6 +86,20 @@ function App() {
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('wc_theme') === 'dark';
+  });
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('wc_theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('wc_theme', 'light');
+    }
+  }, [isDarkMode]);
 
   // Fetch initial data from Firebase via REST API
   useEffect(() => {
@@ -256,7 +270,12 @@ function App() {
     <div className="app-container">
       <header>
         <div>
-          <h1 className="logo">پیش‌بینی جام جهانی ۲۰۲۶ {isSyncing && <span style={{fontSize:'0.8rem', color:'var(--success)'}}> (سینک ابری...)</span>}</h1>
+          <div className="header-left">
+            <h1 className="logo">پیش‌بینی جام جهانی ۲۰۲۶ {isSyncing && <span style={{fontSize:'0.8rem', color:'var(--success)'}}> (سینک ابری...)</span>}</h1>
+            <button className="theme-toggle" onClick={() => setIsDarkMode(!isDarkMode)}>
+              {isDarkMode ? '☀️ روشن' : '🌙 تاریک'}
+            </button>
+          </div>
           {currentUser && (
             <div className="tabs">
               <button className={activeTab === 'groups' ? 'active' : ''} onClick={() => setActiveTab('groups')}>مرحله گروهی</button>
