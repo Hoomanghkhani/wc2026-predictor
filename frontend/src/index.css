@@ -1,19 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;700;900&display=swap');
 
 :root {
-  /* World Cup 2026 Vibrant Theme */
-  --bg-main: #0B0014;
-  --bg-card: rgba(26, 6, 52, 0.7);
-  --primary: #E91E63; /* Pink/Red signature */
-  --primary-glow: rgba(233, 30, 99, 0.6);
+  /* FIFA Official Theme - Clean, Light, Professional */
+  --bg-main: #F4F7F9; /* Very light cool gray */
+  --bg-card: #FFFFFF;
+  --primary: #0253CC; /* Official FIFA/Sports Blue */
+  --primary-hover: #0241A3;
   --secondary: #00E676; /* Pitch Green */
-  --text-main: #F8FAFC;
-  --text-muted: #A78BFA;
-  --border: rgba(255, 255, 255, 0.15);
-  --glass-blur: blur(16px);
-  --success: #10B981;
-  --gold: #FFD700;
-  --danger: #EF4444;
+  --text-main: #1A202C; /* Dark gray for readability */
+  --text-muted: #718096;
+  --border: #E2E8F0;
+  --success: #38A169;
+  --gold: #D69E2E;
+  --danger: #E53E3E;
+  --header-bg: #FFFFFF;
 }
 
 * { box-sizing: border-box; }
@@ -21,155 +21,129 @@
 body {
   margin: 0;
   font-family: 'Vazirmatn', sans-serif;
-  background: radial-gradient(circle at top left, #290045, #0B0014, #001F3F);
-  background-attachment: fixed;
+  background-color: var(--bg-main);
   color: var(--text-main);
   direction: rtl;
   min-height: 100vh;
-}
-
-/* Add a subtle soccer pattern overlay */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-  background-size: 30px 30px;
-  pointer-events: none;
-  z-index: -1;
 }
 
 .app-container { max-width: 1500px; margin: 0 auto; padding: 2rem; }
 
 header {
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid rgba(255,255,255,0.05);
+  margin-bottom: 2rem; padding: 1.5rem; 
+  background: var(--header-bg);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+  border: 1px solid var(--border);
 }
 
 .logo {
-  font-size: 2.2rem; font-weight: 900;
-  background: linear-gradient(135deg, #FFD700, #00E676, #E040FB);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  font-size: 2rem; font-weight: 900;
+  color: var(--primary);
   margin: 0 0 1rem 0;
-  text-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  letter-spacing: -0.5px;
 }
 
-.tabs { display: flex; gap: 1rem; }
+.tabs { display: flex; gap: 0.8rem; }
 .tabs button {
-  background: rgba(255, 255, 255, 0.05); color: var(--text-muted);
-  border: 1px solid var(--border); padding: 0.6rem 1.8rem; border-radius: 12px;
-  font-weight: 600; transition: all 0.3s;
+  background: #F8FAFC; color: var(--text-muted);
+  border: 1px solid var(--border); padding: 0.6rem 1.5rem; border-radius: 10px;
+  font-weight: 700; transition: all 0.2s ease;
 }
 .tabs button.active {
   background: var(--primary); color: white; border-color: var(--primary);
-  box-shadow: 0 0 20px var(--primary-glow);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(2, 83, 204, 0.25);
 }
 .tabs button:hover:not(.active) {
-  background: rgba(255,255,255,0.1);
+  background: #EDF2F7;
+  color: var(--text-main);
 }
 
 .auth-container { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; }
-.auth-box { display: flex; gap: 0.5rem; align-items: center; background: rgba(0,0,0,0.3); padding: 0.8rem; border-radius: 12px; border: 1px solid var(--border); }
+.auth-box { display: flex; gap: 0.5rem; align-items: center; }
 
-.user-profile { display: flex; align-items: center; gap: 1rem; background: rgba(0,0,0,0.3); padding: 0.8rem 1.5rem; border-radius: 12px; border: 1px solid var(--border); }
-.logout-btn { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
-.logout-btn:hover { background: var(--danger); color: white; }
+.user-profile { display: flex; align-items: center; gap: 1rem; background: #F8FAFC; padding: 0.6rem 1.2rem; border-radius: 10px; border: 1px solid var(--border); }
+.logout-btn { background: #FFF5F5; border: 1px solid #FEB2B2; color: var(--danger); padding: 0.4rem 1rem; }
+.logout-btn:hover { background: var(--danger); color: white; border-color: var(--danger); }
 
 select, input, button {
   font-family: 'Vazirmatn', sans-serif; padding: 0.6rem 1rem; border-radius: 8px;
-  border: 1px solid var(--border); background: rgba(11, 0, 20, 0.8); color: white;
+  border: 1px solid var(--border); background: #FFFFFF; color: var(--text-main);
   outline: none; transition: all 0.2s ease;
 }
-select:focus, input:focus { border-color: var(--secondary); box-shadow: 0 0 10px rgba(0,230,118,0.3); }
-button { background: var(--primary); border: none; cursor: pointer; font-weight: 700; letter-spacing: 0.5px; }
-button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--primary-glow); }
+select:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 83, 204, 0.15); }
+button { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700; }
+button:hover { background: var(--primary-hover); }
 
-.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.5rem; }
+.grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
 
 .card, .knockout-stage, .welcome-screen {
-  background: var(--bg-card); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--border); border-radius: 20px; padding: 1.5rem;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.card:hover { border-color: rgba(255, 255, 255, 0.25); box-shadow: 0 20px 45px rgba(0,0,0,0.5); }
+.card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); }
 
-.welcome-screen { text-align: center; padding: 5rem 2rem; margin-top: 2rem; border: 2px dashed var(--primary); }
+.welcome-screen { text-align: center; padding: 5rem 2rem; margin-top: 2rem; border: 2px dashed #CBD5E0; background: #F8FAFC; }
 
-.card h2, .stage-title { margin-top: 0; font-size: 1.3rem; color: #E040FB; border-bottom: 2px solid rgba(255,255,255,0.05); padding-bottom: 0.8rem; margin-bottom: 1.2rem; font-weight: 900; }
+.card h2, .stage-title { margin-top: 0; font-size: 1.3rem; color: #2D3748; border-bottom: 2px solid #EDF2F7; padding-bottom: 0.8rem; margin-bottom: 1.2rem; font-weight: 900; }
 .stage-title { text-align: center; }
-.stage-title.gold { color: var(--gold); border-color: rgba(251, 191, 36, 0.4); text-shadow: 0 0 15px rgba(251,191,36,0.5); }
+.stage-title.gold { color: var(--gold); border-color: #FEFCBF; }
 
 table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.95rem; margin-bottom: 1.5rem; }
-th, td { padding: 0.8rem 0.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
-th { color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
-td:first-child, th:first-child { text-align: right; font-weight: 700; }
-tbody tr:hover { background: rgba(255,255,255,0.02); }
+th, td { padding: 0.8rem 0.5rem; text-align: center; border-bottom: 1px solid #EDF2F7; }
+th { color: var(--text-muted); font-weight: 700; font-size: 0.85rem; }
+td:first-child, th:first-child { text-align: right; font-weight: 700; color: var(--text-main); }
+tbody tr:hover { background: #F8FAFC; }
 
-.match-list { display: flex; flex-direction: column; gap: 0.8rem; }
+.match-list { display: flex; flex-direction: column; gap: 0.6rem; }
 .match-row { 
-  display: flex; flex-direction: column; background: rgba(0,0,0,0.4); 
-  padding: 0.8rem; border-radius: 12px; font-size: 0.9rem; 
-  transition: all 0.3s ease; border: 2px solid transparent; 
+  display: flex; flex-direction: column; background: #F8FAFC; 
+  padding: 0.8rem; border-radius: 10px; font-size: 0.95rem; 
+  transition: all 0.2s ease; border: 1px solid var(--border); 
 }
 .match-main { display: flex; align-items: center; justify-content: space-between; }
-.penalty-inputs { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed rgba(255,255,255,0.1); color: var(--gold); font-size: 0.85rem; font-weight: 600; }
-.match-team { flex: 1; text-align: center; font-weight: 700; letter-spacing: 0.5px; }
+.penalty-inputs { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed #E2E8F0; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; }
+.match-team { flex: 1; text-align: center; font-weight: 700; color: #2D3748; }
 .match-team.right { text-align: left; }
 .match-team.left { text-align: right; }
 
 .match-inputs { display: flex; align-items: center; gap: 0.4rem; padding: 0 1rem; }
-.score-input { width: 42px; text-align: center; padding: 0.4rem; font-size: 1.1rem; font-weight: 900; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; }
-.score-input:focus { background: rgba(255,255,255,0.15); border-color: var(--secondary); box-shadow: 0 0 10px rgba(0,230,118,0.4); }
-.score-input:disabled { opacity: 0.7; cursor: not-allowed; background: rgba(0,0,0,0.5); color: #ccc; }
-.score-input.penalty { width: 34px; padding: 0.2rem; font-size: 0.9rem; border-color: var(--gold); }
+.score-input { width: 44px; text-align: center; padding: 0.4rem; font-size: 1.1rem; font-weight: 800; background: #FFFFFF; border: 1px solid #CBD5E0; border-radius: 6px; color: var(--text-main); }
+.score-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(2, 83, 204, 0.15); }
+.score-input:disabled { opacity: 0.8; cursor: not-allowed; background: #EDF2F7; color: #A0AEC0; }
+.score-input.penalty { width: 36px; padding: 0.2rem; font-size: 0.95rem; border-color: var(--gold); }
 
-.qualifier { background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), transparent); border-right: 3px solid var(--success); }
+.qualifier { background: #F0FFF4; border-right: 3px solid var(--success); }
 
 /* --- HORIZONTAL BRACKET LAYOUT (KNOCKOUTS) --- */
 .knockout-container { 
   display: flex; 
   overflow-x: auto; 
-  gap: 2rem; 
+  gap: 2.5rem; 
   padding: 1rem 0 2rem 0; 
-  align-items: stretch; /* Make all columns the same height */
+  align-items: stretch;
 }
-
-/* Beautiful Scrollbar for Bracket */
-.knockout-container::-webkit-scrollbar { height: 12px; }
-.knockout-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 10px; }
-.knockout-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+.knockout-container::-webkit-scrollbar { height: 10px; }
+.knockout-container::-webkit-scrollbar-track { background: #EDF2F7; border-radius: 10px; }
+.knockout-container::-webkit-scrollbar-thumb { background: #A0AEC0; border-radius: 10px; }
 
 .knockout-stage {
-  min-width: 360px; /* Fixed width for each stage column */
+  min-width: 320px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
 }
-
-/* Center and space out matches inside the stage to create a bracket effect */
 .knockout-stage > .match-list {
-  flex: 1; /* Take up all vertical space */
+  flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: space-around; /* This creates the automatic bracket spacing! */
-  gap: 1rem;
+  justify-content: space-around;
+  gap: 0.8rem;
 }
 
 /* Colors for Prediction Results */
-.exact-match { border-color: var(--success); background: rgba(16, 185, 129, 0.15); box-shadow: 0 0 15px rgba(16, 185, 129, 0.2); }
-.correct-outcome { border-color: #84cc16; background: rgba(132, 204, 22, 0.15); }
-.wrong-match { border-color: var(--danger); background: rgba(239, 68, 68, 0.15); }
-
-.lock-btn {
-  padding: 0.3rem 0.6rem;
-  font-size: 0.75rem;
-  border-radius: 6px;
-  background: var(--gold);
-  color: #000;
-  margin-left: 0.8rem;
-  box-shadow: 0 2px 10px rgba(255,215,0,0.3);
-}
-.lock-btn:hover { background: #F59E0B; }
+.exact-match { border-color: var(--success); background: #F0FFF4; box-shadow: 0 0 0 1px var(--success); }
+.correct-outcome { border-color: #84CC16; background: #F7FEE7; }
+.wrong-match { border-color: var(--danger); background: #FFF5F5; }

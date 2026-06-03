@@ -4,17 +4,16 @@ import rawData from './data.json';
 import { calculateGroupStandings, getKnockoutMatches } from './utils';
 
 // Helper component to render each match row cleanly
-const MatchRow = ({ m, isKnockout, predictions, adminPreds, currentUser, handleScoreChange, handleLock }) => {
+const MatchRow = ({ m, isKnockout, predictions, adminPreds, currentUser, handleScoreChange }) => {
   const p = predictions[m.id] || {};
   const a = adminPreds[m.id] || {};
   
   const isAdmin = currentUser === 'admin';
   const isAdminSet = a.s1 !== undefined && a.s1 !== '' && a.s2 !== undefined && a.s2 !== '';
-  const isUserLocked = p.locked;
   const isUnknown = m.t1 === '؟' || m.t2 === '؟';
   
-  // Inputs are disabled if it's unknown, OR if user locked it, OR if admin already set the real result
-  const disabled = isUnknown || (!isAdmin && (isUserLocked || isAdminSet));
+  // Inputs are disabled if it's unknown, OR if user is NOT admin and the admin has already set the result
+  const disabled = isUnknown || (!isAdmin && isAdminSet);
 
   // Determine Class based on correctness (Only if admin has set result and user is not admin)
   let matchClass = 'match-row';
@@ -41,9 +40,6 @@ const MatchRow = ({ m, isKnockout, predictions, adminPreds, currentUser, handleS
       <div className="match-main">
         <span className="match-team right">{m.team1 || m.t1}</span>
         <div className="match-inputs">
-          {!isAdmin && !disabled && p.s1 !== undefined && p.s1 !== '' && p.s2 !== undefined && p.s2 !== '' && (
-            <button className="lock-btn" onClick={() => handleLock(m.id)}>ثبت</button>
-          )}
           <input 
             type="text" className="score-input" value={p.s1 ?? ''}
             onChange={(e) => handleScoreChange(m.id, 1, e.target.value)}
@@ -88,15 +84,8 @@ function App() {
   const [authPassword, setAuthPassword] = useState('');
 
   useEffect(() => {
-    // Clear old predictions and reset to V3 mapping
-    if (localStorage.getItem('wc2026_version') !== 'v3') {
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('wc2026_')) localStorage.removeItem(key);
-      });
-      localStorage.setItem('wc2026_version', 'v3');
-      window.location.reload();
-    }
-
+    // We already cleared old predictions previously. No need to clear again immediately unless required.
+    
     let savedUsers = JSON.parse(localStorage.getItem('wc2026_auth_users') || '[]');
     if (!savedUsers.find(u => u.username === 'admin')) {
       savedUsers.push({ username: 'admin', password: 'admin' });
@@ -145,7 +134,7 @@ function App() {
     if (value !== '' && (isNaN(value) || value < 0)) return;
     
     const newPreds = { ...predictions };
-    if (!newPreds[matchId]) newPreds[matchId] = { s1: '', s2: '', p1: '', p2: '', locked: false };
+    if (!newPreds[matchId]) newPreds[matchId] = { s1: '', s2: '', p1: '', p2: '' };
     
     if (team === 1) newPreds[matchId].s1 = value;
     else if (team === 2) newPreds[matchId].s2 = value;
@@ -154,15 +143,6 @@ function App() {
 
     setPredictions(newPreds);
     localStorage.setItem(`wc2026_preds_${currentUser}`, JSON.stringify(newPreds));
-  };
-
-  const handleLockPrediction = (matchId) => {
-    const newPreds = { ...predictions };
-    if (newPreds[matchId]) {
-      newPreds[matchId].locked = true;
-      setPredictions(newPreds);
-      localStorage.setItem(`wc2026_preds_${currentUser}`, JSON.stringify(newPreds));
-    }
   };
 
   const adminPreds = currentUser === 'admin' 
@@ -202,7 +182,7 @@ function App() {
 
     return (
       <div className="card" style={{ maxWidth: '800px', margin: '0 auto' }}>
-        <h2 className="stage-title gold" style={{ textAlign: 'center' }}>جدول امتیازات کاربران</h2>
+        <h2 className="stage-title gold">جدول امتیازات کاربران</h2>
         <table className="leaderboard-table">
           <thead>
             <tr>
@@ -256,7 +236,7 @@ function App() {
           </div>
         ) : (
           <div className="user-profile">
-            <span>کاربر فعال: <strong style={{ color: isAdmin ? 'var(--gold)' : 'var(--text-main)' }}>
+            <span>کاربر فعال: <strong style={{ color: isAdmin ? 'var(--gold)' : 'var(--primary)' }}>
               {isAdmin ? '👑 ادمین (ثبت نتایج واقعی)' : currentUser}
             </strong></span>
             <button className="logout-btn" onClick={handleLogout}>خروج</button>
@@ -266,8 +246,8 @@ function App() {
 
       {!currentUser ? (
         <div className="welcome-screen">
-          <h2>به سامانه پیش‌بینی جام جهانی خوش آمدید</h2>
-          <p>اگر حساب دارید وارد شوید، در غیر اینصورت به صورت خودکار ثبت‌نام می‌شوید.</p>
+          <h2>به سامانه پیش‌بینی جام جهانی ۲۰۲۶ خوش آمدید</h2>
+          <p>برای شروع و رقابت با دوستان، وارد حساب خود شوید.</p>
         </div>
       ) : (
         <>
@@ -300,7 +280,7 @@ function App() {
                         <MatchRow 
                           key={m.id} m={m} isKnockout={false} 
                           predictions={predictions} adminPreds={adminPreds} 
-                          currentUser={currentUser} handleScoreChange={handleScoreChange} handleLock={handleLockPrediction}
+                          currentUser={currentUser} handleScoreChange={handleScoreChange}
                         />
                       ))}
                     </div>
@@ -315,35 +295,35 @@ function App() {
               <div className="knockout-stage">
                 <h2 className="stage-title">یک شانزدهم نهایی (R32)</h2>
                 <div className="match-list">
-                  {knockouts.r32.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} handleLock={handleLockPrediction} />)}
+                  {knockouts.r32.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage">
                 <h2 className="stage-title">یک هشتم نهایی (R16)</h2>
                 <div className="match-list">
-                  {knockouts.r16.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} handleLock={handleLockPrediction} />)}
+                  {knockouts.r16.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage">
                 <h2 className="stage-title">یک چهارم نهایی</h2>
                 <div className="match-list">
-                  {knockouts.qf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} handleLock={handleLockPrediction} />)}
+                  {knockouts.qf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage">
                 <h2 className="stage-title">نیمه‌نهایی</h2>
                 <div className="match-list">
-                  {knockouts.sf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} handleLock={handleLockPrediction} />)}
+                  {knockouts.sf.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
               <div className="knockout-stage final-stage">
                 <h2 className="stage-title">رده‌بندی</h2>
                 <div className="match-list">
-                  {knockouts.third.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} handleLock={handleLockPrediction} />)}
+                  {knockouts.third.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
                 <h2 className="stage-title gold">فینال</h2>
                 <div className="match-list">
-                  {knockouts.final.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} handleLock={handleLockPrediction} />)}
+                  {knockouts.final.map(m => <MatchRow key={m.id} m={m} isKnockout={true} predictions={predictions} adminPreds={adminPreds} currentUser={currentUser} handleScoreChange={handleScoreChange} />)}
                 </div>
               </div>
             </div>
