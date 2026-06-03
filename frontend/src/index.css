@@ -18,6 +18,7 @@
   --input-disabled: #EDF2F7;
   --match-row-bg: #F8FAFC;
   --match-row-hover: #F1F5F9;
+  --qualifier-bg: #F0FFF4;
 }
 
 body.dark-mode {
@@ -33,6 +34,7 @@ body.dark-mode {
   --input-disabled: #334155;
   --match-row-bg: #0F172A;
   --match-row-hover: #1E293B;
+  --qualifier-bg: rgba(16, 185, 129, 0.15);
 }
 
 * { box-sizing: border-box; }
@@ -154,7 +156,7 @@ tbody tr:hover { background: var(--match-row-bg); }
 .score-input:disabled { opacity: 0.8; cursor: not-allowed; background: var(--input-disabled); color: var(--text-muted); }
 .score-input.penalty { width: 36px; padding: 0.2rem; font-size: 0.95rem; border-color: var(--gold); }
 
-.qualifier { background: #F0FFF4; border-right: 3px solid var(--success); }
+.qualifier { background: var(--qualifier-bg); border-right: 3px solid var(--success); }
 
 /* --- HORIZONTAL BRACKET LAYOUT (KNOCKOUTS) --- */
 .knockout-container { 
