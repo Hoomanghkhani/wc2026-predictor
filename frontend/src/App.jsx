@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './index.css';
 import rawData from './data.json';
-import { calculateGroupStandings, getKnockoutMatches } from './utils';
+import { calculateGroupStandings, getKnockoutMatches, fetchLiveResultsFromAPI } from './utils';
 
 const DB_URL = "https://wc2026-8c20c-default-rtdb.firebaseio.com";
 
@@ -86,6 +86,9 @@ function App() {
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('api_football_key') || '');
+  const [isSyncingAPI, setIsSyncingAPI] = useState(false);
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('wc_theme') === 'dark';
@@ -206,6 +209,42 @@ function App() {
   const knockouts = getKnockoutMatches(rawData, adminPreds);
   const isAdmin = currentUser === 'admin';
 
+  const handleSyncAPI = async () => {
+    if (!apiKey) return alert('لطفاً ابتدا API Key را وارد کنید.');
+    setIsSyncingAPI(true);
+    localStorage.setItem('api_football_key', apiKey);
+    
+    const result = await fetchLiveResultsFromAPI(apiKey, rawData.matches);
+    if (result.error) {
+      alert(result.error);
+    } else if (result.updates) {
+      const updatesCount = Object.keys(result.updates).length;
+      if (updatesCount === 0) {
+        alert('هیچ بازی پایان‌یافته‌ای برای جام جهانی در API یافت نشد (یا هنوز شروع نشده است).');
+      } else {
+        try {
+          await fetch(`${DB_URL}/predictions/admin.json`, {
+            method: 'PATCH',
+            body: JSON.stringify(result.updates)
+          });
+          
+          setDbPredictions(prev => ({
+            ...prev,
+            'admin': {
+              ...(prev['admin'] || {}),
+              ...result.updates
+            }
+          }));
+          
+          alert(`نتایج ${updatesCount} بازی با موفقیت از API دریافت و ذخیره شد!`);
+        } catch (e) {
+          alert('خطا در ذخیره نتایج در سرور ابری.');
+        }
+      }
+    }
+    setIsSyncingAPI(false);
+  };
+
   const renderLeaderboard = () => {
     const userScores = Object.keys(dbUsers).filter(u => u !== 'admin').map(username => {
       const uPreds = dbPredictions[username] || {};
@@ -310,6 +349,27 @@ function App() {
         </div>
       ) : (
         <>
+          {isAdmin && (
+            <div className="card" style={{ marginBottom: '20px', backgroundColor: 'rgba(255, 215, 0, 0.05)', border: '1px solid var(--gold)' }}>
+              <h3 style={{ color: 'var(--gold)', margin: '0 0 10px 0' }}>⚙️ پنل مدیریت (اتصال به API-Football)</h3>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <input 
+                  type="text" 
+                  placeholder="API-Football Key (از api-sports.io)" 
+                  value={apiKey} 
+                  onChange={e => setApiKey(e.target.value)} 
+                  style={{ flex: 1, minWidth: '200px', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
+                />
+                <button onClick={handleSyncAPI} disabled={isSyncingAPI} style={{ backgroundColor: 'var(--gold)', color: '#000', fontWeight: 'bold' }}>
+                  {isSyncingAPI ? 'در حال دریافت...' : '🔄 دریافت خودکار نتایج'}
+                </button>
+              </div>
+              <p style={{ fontSize: '0.85rem', marginTop: '10px', color: 'var(--text-color)', opacity: 0.8 }}>
+                * برای دریافت رایگان کلید API، می‌توانید در سایت <strong>dashboard.api-football.com</strong> ثبت‌نام کنید. در نسخه رایگان روزانه ۱۰۰ درخواست مجاز است.
+              </p>
+            </div>
+          )}
+
           {activeTab === 'groups' && (
             <div className="grid-container">
               {Object.keys(rawData.groups).map(groupKey => {
