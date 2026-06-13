@@ -87,7 +87,7 @@ function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('api_football_key') || '');
+  const [apiKey, setApiKey] = useState(() => import.meta.env.VITE_API_FOOTBALL_KEY || localStorage.getItem('api_football_key') || '');
   const [isSyncingAPI, setIsSyncingAPI] = useState(false);
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
