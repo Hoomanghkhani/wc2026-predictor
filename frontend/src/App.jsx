@@ -87,7 +87,6 @@ function App() {
   const [authPassword, setAuthPassword] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   
-  const [apiKey, setApiKey] = useState(() => import.meta.env.VITE_API_FOOTBALL_KEY || localStorage.getItem('api_football_key') || '');
   const [isSyncingAPI, setIsSyncingAPI] = useState(false);
   
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -158,7 +157,8 @@ function App() {
         setAuthUsername('');
         setAuthPassword('');
         alert('حساب کاربری جدید در سرور ابری ساخته شد و وارد شدید.');
-      } catch (e) {
+      } catch (error) {
+        console.error("Error registering user:", error);
         alert('خطا در ارتباط با سرور ابری!');
       }
     }
@@ -179,11 +179,8 @@ function App() {
     
     if (team === 1) newPred.s1 = value;
     else if (team === 2) newPred.s2 = value;
-    else if (team === 'p1') newPred.s1 = value; // typo prevention, assuming p1 and p2 below
     else if (team === 'p1') newPred.p1 = value;
     else if (team === 'p2') newPred.p2 = value;
-
-    if(team === 'p1') newPred.p1 = value; // Corrected overrides
 
     setDbPredictions(prev => ({
       ...prev,
@@ -210,11 +207,20 @@ function App() {
   const isAdmin = currentUser === 'admin';
 
   const handleSyncAPI = async () => {
-    if (!apiKey) return alert('لطفاً ابتدا API Key را وارد کنید.');
     setIsSyncingAPI(true);
-    localStorage.setItem('api_football_key', apiKey);
     
-    const result = await fetchLiveResultsFromAPI(apiKey, rawData.matches);
+    const groupMatches = rawData.matches.filter(m => m.group && m.group !== 'W' && m.group !== '1' && m.group !== '2');
+    const knockoutMatches = [
+      ...knockouts.r32,
+      ...knockouts.r16,
+      ...knockouts.qf,
+      ...knockouts.sf,
+      ...knockouts.third,
+      ...knockouts.final
+    ];
+    const allLocalMatches = [...groupMatches, ...knockoutMatches];
+
+    const result = await fetchLiveResultsFromAPI(allLocalMatches);
     if (result.error) {
       alert(result.error);
     } else if (result.updates) {
@@ -237,7 +243,8 @@ function App() {
           }));
           
           alert(`نتایج ${updatesCount} بازی با موفقیت از API دریافت و ذخیره شد!`);
-        } catch (e) {
+        } catch (error) {
+          console.error("Error saving predictions:", error);
           alert('خطا در ذخیره نتایج در سرور ابری.');
         }
       }
@@ -351,21 +358,14 @@ function App() {
         <>
           {isAdmin && (
             <div className="card" style={{ marginBottom: '20px', backgroundColor: 'rgba(255, 215, 0, 0.05)', border: '1px solid var(--gold)' }}>
-              <h3 style={{ color: 'var(--gold)', margin: '0 0 10px 0' }}>⚙️ پنل مدیریت (اتصال به API-Football)</h3>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <input 
-                  type="text" 
-                  placeholder="API-Football Key (از api-sports.io)" 
-                  value={apiKey} 
-                  onChange={e => setApiKey(e.target.value)} 
-                  style={{ flex: 1, minWidth: '200px', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                />
-                <button onClick={handleSyncAPI} disabled={isSyncingAPI} style={{ backgroundColor: 'var(--gold)', color: '#000', fontWeight: 'bold' }}>
+              <h3 style={{ color: 'var(--gold)', margin: '0 0 10px 0' }}>⚙️ پنل مدیریت (اتصال به سرور API رایگان جام جهانی ۲۰۲۶)</h3>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <button onClick={handleSyncAPI} disabled={isSyncingAPI} style={{ backgroundColor: 'var(--gold)', color: '#000', fontWeight: 'bold', padding: '10px 20px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}>
                   {isSyncingAPI ? 'در حال دریافت...' : '🔄 دریافت خودکار نتایج'}
                 </button>
               </div>
               <p style={{ fontSize: '0.85rem', marginTop: '10px', color: 'var(--text-color)', opacity: 0.8 }}>
-                * برای دریافت رایگان کلید API، می‌توانید در سایت <strong>dashboard.api-football.com</strong> ثبت‌نام کنید. در نسخه رایگان روزانه ۱۰۰ درخواست مجاز است.
+                * با کلیک بر روی دکمه بالا، آخرین نتایج بازی‌های برگزار شده جام جهانی ۲۰۲۶ مستقیماً از سرور ابری رایگان دریافت و در پایگاه داده ذخیره می‌شود. نیازی به وارد کردن کلید API نیست.
               </p>
             </div>
           )}

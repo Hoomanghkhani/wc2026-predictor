@@ -172,83 +172,68 @@ export const teamNamesMapping = {
   "Mexico": "مکزیک", "South Africa": "آفریقای جنوبی", "South Korea": "کره جنوبی", "Czech Republic": "چک",
   "Canada": "کانادا", "Bosnia and Herzegovina": "بوسنی و هرزگوین", "Qatar": "قطر", "Switzerland": "سوئیس",
   "Brazil": "برزیل", "Morocco": "مراکش", "Haiti": "هائیتی", "Scotland": "اسکاتلند",
-  "USA": "آمریکا", "Paraguay": "پاراگوئه", "Australia": "استرالیا", "Turkey": "ترکیه",
-  "Germany": "آلمان", "Curacao": "کوراسائو", "Ivory Coast": "ساحل عاج", "Ecuador": "اکوادور",
+  "USA": "آمریکا", "United States": "آمریکا", "Paraguay": "پاراگوئه", "Australia": "استرالیا", "Turkey": "ترکیه",
+  "Germany": "آلمان", "Curacao": "کوراسائو", "Curaçao": "کوراسائو", "Ivory Coast": "ساحل عاج", "Ecuador": "اکوادور",
   "Netherlands": "هلند", "Japan": "ژاپن", "Sweden": "سوئد", "Tunisia": "تونس",
   "Belgium": "بلژیک", "Egypt": "مصر", "Iran": "ایران", "New Zealand": "نیوزیلند",
   "Spain": "اسپانیا", "Cape Verde": "کیپ ورد", "Saudi Arabia": "عربستان سعودی", "Uruguay": "اروگوئه",
   "France": "فرانسه", "Senegal": "سنگال", "Iraq": "عراق", "Norway": "نروژ",
   "Argentina": "آرژانتین", "Algeria": "الجزایر", "Austria": "اتریش", "Jordan": "اردن",
-  "Portugal": "پرتغال", "Congo": "کنگو", "Uzbekistan": "ازبکستان", "Colombia": "کلمبیا",
+  "Portugal": "پرتغال", "Congo": "کنگو", "Democratic Republic of the Congo": "کنگو", "Uzbekistan": "ازبکستان", "Colombia": "کلمبیا",
   "England": "انگلیس", "Croatia": "کرواسی", "Ghana": "غنا", "Panama": "پاناما"
 };
 
-export const fetchLiveResultsFromAPI = async (apiKey, rawMatches) => {
+export const fetchLiveResultsFromAPI = async (allLocalMatches) => {
   try {
-    const response = await fetch("https://v3.football.api-sports.io/fixtures?league=1&season=2026", {
-      method: "GET",
-      headers: {
-        "x-apisports-key": apiKey,
-        "x-rapidapi-host": "v3.football.api-sports.io"
-      }
-    });
+    const response = await fetch("https://worldcup26.ir/get/games");
 
     if (!response.ok) {
       throw new Error('API Request Failed');
     }
 
     const data = await response.json();
-    if (!data.response || data.response.length === 0) {
-      // Return a message if tournament data is not available yet on the API
+    if (!data.games || data.games.length === 0) {
       return { error: 'هنوز داده‌های مسابقات جام جهانی ۲۰۲۶ در API قرار نگرفته است.' };
     }
 
-    const apiFixtures = data.response;
+    const apiFixtures = data.games;
     const adminUpdates = {};
     const getFaName = (enName) => teamNamesMapping[enName] || enName;
 
-    rawMatches.forEach(localMatch => {
-      // Find corresponding fixture in API
-      const matchedApiFixture = apiFixtures.find(apiF => {
-        const homeFa = getFaName(apiF.teams.home.name);
-        const awayFa = getFaName(apiF.teams.away.name);
-        return (
-          (localMatch.team1 === homeFa && localMatch.team2 === awayFa) ||
-          (localMatch.team1 === awayFa && localMatch.team2 === homeFa)
-        );
-      });
+    apiFixtures.forEach(apiF => {
+      // Only sync matches that are finished
+      if (apiF.finished === 'TRUE') {
+        const homeFa = getFaName(apiF.home_team_name_en);
+        const awayFa = getFaName(apiF.away_team_name_en);
 
-      if (matchedApiFixture) {
-        const status = matchedApiFixture.fixture.status.short;
-        if (['FT', 'AET', 'PEN'].includes(status)) {
-          let s1 = matchedApiFixture.goals.home;
-          let s2 = matchedApiFixture.goals.away;
+        // Find corresponding fixture in local matches by matching team names
+        const matchedLocalMatch = allLocalMatches.find(localMatch => {
+          const t1 = localMatch.team1 || localMatch.t1;
+          const t2 = localMatch.team2 || localMatch.t2;
+          return (
+            t1 && t2 && (
+              (t1 === homeFa && t2 === awayFa) ||
+              (t1 === awayFa && t2 === homeFa)
+            )
+          );
+        });
+
+        if (matchedLocalMatch) {
+          let s1 = apiF.home_score;
+          let s2 = apiF.away_score;
 
           // Swap scores if the home/away order in API is reversed compared to local JSON
-          if (localMatch.team1 === getFaName(matchedApiFixture.teams.away.name)) {
-            s1 = matchedApiFixture.goals.away;
-            s2 = matchedApiFixture.goals.home;
+          const localT1 = matchedLocalMatch.team1 || matchedLocalMatch.t1;
+          if (localT1 === awayFa) {
+            s1 = apiF.away_score;
+            s2 = apiF.home_score;
           }
 
-          let p1 = '';
-          let p2 = '';
-          if (status === 'PEN') {
-            let apiP1 = matchedApiFixture.score.penalty.home;
-            let apiP2 = matchedApiFixture.score.penalty.away;
-            if (localMatch.team1 === getFaName(matchedApiFixture.teams.away.name)) {
-              p1 = apiP2;
-              p2 = apiP1;
-            } else {
-              p1 = apiP1;
-              p2 = apiP2;
-            }
-          }
-
-          adminUpdates[localMatch.id] = {
+          adminUpdates[matchedLocalMatch.id] = {
             s1: s1.toString(),
             s2: s2.toString(),
-            p1: p1 ? p1.toString() : '',
-            p2: p2 ? p2.toString() : ''
+            p1: '',
+            p2: ''
           };
         }
       }
@@ -257,6 +242,6 @@ export const fetchLiveResultsFromAPI = async (apiKey, rawMatches) => {
     return { updates: adminUpdates, message: 'نتایج با موفقیت همگام‌سازی شد.' };
   } catch (error) {
     console.error(error);
-    return { error: 'خطا در ارتباط با سرور API-Football.' };
+    return { error: 'خطا در ارتباط با سرور API.' };
   }
 };
